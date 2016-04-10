@@ -64,7 +64,7 @@ metadata {
 
     preferences {
         input("camIP", "string", title:"Hostname or IP Address", description: "Enter the Hostname or IP Address of the camera", required: true, displayDuringSetup: true)
-        input("camPort", "string", title:"Port", description: "Enter Port Number assigned to the camera", defaultValue: 80 , required: true, displayDuringSetup: true)
+        input("camPort", "string", title:"Port", description: "Enter the Port Number assigned to the camera", defaultValue: 80 , required: true, displayDuringSetup: true)
         input("camUser", "string", title:"Account Username", description: "Enter the Account Username to use", required: true, displayDuringSetup: true)
         input("camPassword", "password", title:"Account Password", description: "Enter the Password for this Account Username", required: true, displayDuringSetup: true)
         input("camChannel", "range: 0..9", title:"Video Channel", description: "Specify the image channel to use (typically 0)", defaultValue: 0, required: true, displayDuringSetup: true)
