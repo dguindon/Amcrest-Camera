@@ -21,7 +21,7 @@
  *  code only and any reference to these resources beyond this use is expressly prohibited.
  *
  *  Release History:
- *    2016-04-23: v1.0.0 = Initial release
+ *    2016-04-10: v1.0.0 = Initial release
  *
  **/
 
@@ -71,11 +71,11 @@ metadata {
         input("camDebug", "bool", title:"Camera Debug Mode", description: "Enable to display debugging information in the 'Live Logging' view", defaultValue: false, required: true, displayDuringSetup: true)
     }
 
-    /*
+
     simulator {
         //
     }
-    */
+
 
     tiles(scale: 2) {
         standardTile("take", "device.image", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
