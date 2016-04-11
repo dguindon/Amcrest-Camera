@@ -26,7 +26,7 @@
  **/
 
 metadata {
-    definition (name: "Amcrest Camera", namespace: "dguindon", author: "programmer_dave@yahoo.com") {
+    definition (name: "Amcrest Camera", namespace: "belgarion", author: "programmer_dave@yahoo.com") {
         capability "Image Capture"
         capability "Motion Sensor"
         capability "Polling"
