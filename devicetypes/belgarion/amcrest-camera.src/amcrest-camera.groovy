@@ -1,7 +1,7 @@
 /**
  *  Amcrest Camera
  *
- *  Copyright © 2016 David Guindon, (Belgarion on SmartThings, programmer_dave@yahoo.com)
+ *  Copyright © 2016 David Guindon, (Belgarion on SmartThings)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -26,7 +26,7 @@
  **/
 
 metadata {
-    definition (name: "Amcrest Camera", namespace: "belgarion", author: "programmer_dave@yahoo.com") {
+    definition (name: "Amcrest Camera", namespace: "belgarion", author: "Belgarion") {
         capability "Image Capture"
         capability "Motion Sensor"
         capability "Polling"
