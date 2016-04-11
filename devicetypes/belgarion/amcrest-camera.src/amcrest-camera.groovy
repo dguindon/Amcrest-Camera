@@ -68,7 +68,7 @@ metadata {
         input("camUser", "string", title:"Account Username", description: "Enter the Account Username to use", required: true, displayDuringSetup: true)
         input("camPassword", "password", title:"Account Password", description: "Enter the Password for this Account Username", required: true, displayDuringSetup: true)
         input("camChannel", "range: 0..9", title:"Video Channel", description: "Specify the image channel to use (typically 0)", defaultValue: 0, required: true, displayDuringSetup: true)
-        input("camDebug", "bool", title:"Camera Debug Mode", description: "Enable to display debugging information in the 'Live Logging' view", defaultValue: false, required: true, displayDuringSetup: true)
+        input("camDebug", "bool", title:"Camera Debug Mode", description: "Enable to display debugging information in the 'Live Logging' view", defaultValue: false, required: false, displayDuringSetup: true)
     }
 
 
