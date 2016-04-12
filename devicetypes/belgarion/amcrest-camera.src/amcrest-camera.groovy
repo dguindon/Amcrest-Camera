@@ -1,7 +1,7 @@
 /**
- *  Amcrest Camera
+ *  Amcrest Camera Device
  *
- *  Copyright 2016 Belgarion, (programmer_dave@yahoo.com)
+ *  Copyright 2016 Belgarion (programmer_dave@yahoo.com)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -141,18 +141,18 @@ metadata {
             state "left", label: "Left", action: "moveLeft", icon: "st.thermostat.thermostat-left", backgroundColor: "#FFFFFF", nextState: "leftish"
             state "leftish", label: "Left", action: "", icon: "st.thermostat.thermostat-left", backgroundColor: "#00FF00", nextState: "left"
         }
-        standardTile("refresh", "device.switch", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
-            state "refresh", label: "Refresh", action: "refresh.refresh", icon: "st.secondary.refresh", backgroundColor: "#FFFFFF"
+        standardTile("refresh", "device.refresh", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
+            state "refresh", label: "", action: "refresh.refresh", icon: "st.secondary.refresh", backgroundColor: "#FFFFFF"
         }
         standardTile("right", "device.right", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "right", label: "Right", action: "moveRight", icon: "st.thermostat.thermostat-right", backgroundColor: "#FFFFFF", nextState: "rightish"
             state "rightish", label: "Right", action: "", icon: "st.thermostat.thermostat-right", backgroundColor: "#00FF00", nextState: "right"
         }
-        standardTile("recState", "device.recStatus", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "off", label: "Record Off", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
-            state "on", label: "Record On", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
-            state "auto", label: "Record Auto", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
-            state "...", label: "...", action: "", nextState: "..."
+        standardTile("recState", "device.recStatus", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
+            state "off", label: "Off", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "on", label: "On", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "auto", label: "Auto", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "...", label: "...", action: "", backgroundColor: "#00FF00", nextState: "..."
         }
         standardTile("down", "device.down", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "down", label: "Down", action: "moveDown", icon: "st.thermostat.thermostat-down", backgroundColor: "#FFFFFF", nextState: "downish"
@@ -249,6 +249,7 @@ def changeRecord() {
         state.Record = "off"
         sendEvent(name: "recStatus", value: "off", isStateChange: true, displayed: false)
     }
+    sendEvent(name: "recState", value: "", isStateChange: true, displayed: false)
     String apiCommand = setFlipMirrorMotionRotateNv()
     hubGet(apiCommand)
 }
