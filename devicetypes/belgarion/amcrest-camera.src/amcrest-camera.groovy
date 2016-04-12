@@ -12,13 +12,17 @@
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
  *
- *  Thanks to Patrick Stuart for all of the hard work he put into his Generic Camera device!  Very educational!
- *  Also, thanks to tgauchat and RBoy for the "convertHostnameToIPAddress" macro, as well as slagle, eparkerjr and
- *  scottinpollock for their efforts on the great Foscam & D-Link device types.  Additionaly, RBoy's trick for making the
- *  image available to other apps has been rolled in... thx!
+ *  You are free to use this code, provided the following conditions are met:
+ *   - This software is free for Private Use.  You may use and modify the software without distributing it.
+ *   - This software and any derivatives of it may not be used for commercial purposes.
+ *   - The images and/or files that originate from "http://smartthings.belgarion.s3.amazonaws.com/" are for use within
+ *     THIS code only and any reference to these resources beyond this use is expressly prohibited.
  *
- *  The images and/or files that originate from "http://smartthings.belgarion.s3.amazonaws.com/" are for use within THIS
- *  code only and any reference to these resources beyond this use is expressly prohibited.
+ *  Citations:
+ *   - Patrick Stuart: Based on all of the hard work he put into his Generic Camera device.  Very educational!
+ *   - tgauchat and RBoy: For the "convertHostnameToIPAddress" macro.
+ *   - slagle, eparkerjr and scottinpollock: For their efforts on the great Foscam & D-Link device types.
+ *   - RBoy: Thank you for the code for making the JPEG image available to other apps.
  *
  *  Release History:
  *    2016-04-10: v1.0.0 = Initial release
@@ -39,6 +43,7 @@ metadata {
         attribute "imageDataJpeg", "string"
 
         command "changeNvLED"
+        command "changeRecord"
         command "changeRotation"
         command "lightOff"
         command "lightOn"
@@ -143,8 +148,11 @@ metadata {
             state "right", label: "Right", action: "moveRight", icon: "st.thermostat.thermostat-right", backgroundColor: "#FFFFFF", nextState: "rightish"
             state "rightish", label: "Right", action: "", icon: "st.thermostat.thermostat-right", backgroundColor: "#00FF00", nextState: "right"
         }
-        standardTile("blank", "device.image", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "blank", label: "", action: "", icon: "", backgroundColor: "#FFFFFF"
+        standardTile("recState", "device.recStatus", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "off", label: "Record Off", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "on", label: "Record On", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "auto", label: "Record Auto", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "...", label: "...", action: "", nextState: "..."
         }
         standardTile("down", "device.down", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "down", label: "Down", action: "moveDown", icon: "st.thermostat.thermostat-down", backgroundColor: "#FFFFFF", nextState: "downish"
@@ -184,7 +192,7 @@ metadata {
         }
 
         main "take"
-        details(["take", "ledState", "motionStatus", "camDetails", "preset1", "preset2", "preset3", "preset4", "preset5", "preset6", "zoomOut", "up", "zoomIn", "left", "refresh", "right", "blank", "down", "reboot", "flipStatus", "mirrorStatus", "rotateStatus", "labelSpeed", "labelSensitivity", "levelSliderControlSpeed", "levelSliderControlSensitivity"])
+        details(["take", "ledState", "motionStatus", "camDetails", "preset1", "preset2", "preset3", "preset4", "preset5", "preset6", "zoomOut", "up", "zoomIn", "left", "refresh", "right", "recState", "down", "reboot", "flipStatus", "mirrorStatus", "rotateStatus", "labelSpeed", "labelSensitivity", "levelSliderControlSpeed", "levelSliderControlSensitivity"])
     }
 }
 
@@ -200,22 +208,46 @@ def take() {
 def changeNvLED() {
     doDebug("changeNvLED -> hubGet Enabled?: ${doHubGet ?: false}")
     if (!state.stateNvStatus || (state.stateNvStatus == "off")) {
-        log.info "Toggle NightVision: IR LED set to 'ON'"
+        log.info "Change NightVision: IR LED set to 'ON'"
         state.stateNvSwitch = 3
         state.stateNvStatus = "on"
         sendEvent(name: "ledStatus", value: "on", isStateChange: true, displayed: false)
     }
     else if (state.stateNvStatus == "on") {
-        log.info "Toggle NightVision: IR LED set to 'AUTO'"
+        log.info "Change NightVision: IR LED set to 'AUTO'"
         state.stateNvSwitch = 4
         state.stateNvStatus = "auto"
         sendEvent(name: "ledStatus", value: "auto", isStateChange: true, displayed: false)
     }
     else {
-        log.info "Toggle NightVision: IR LED set to 'OFF'"
+        log.info "Change NightVision: IR LED set to 'OFF'"
         state.stateNvSwitch = 0
         state.stateNvStatus = "off"
         sendEvent(name: "ledStatus", value: "off", isStateChange: true, displayed: false)
+    }
+    String apiCommand = setFlipMirrorMotionRotateNv()
+    hubGet(apiCommand)
+}
+
+def changeRecord() {
+    doDebug("changeRecord -> hubGet Enabled?: ${doHubGet ?: false}")
+    if (!state.stateRecord || (state.stateRecord == "off")) {
+        log.info "Change Record: Recording set to 'ON'"
+        state.stateRecSwitch = 1
+        state.stateRecord = "on"
+        sendEvent(name: "recStatus", value: "on", isStateChange: true, displayed: false)
+    }
+    else if (state.stateRecord == "on") {
+        log.info "Change Record: Recording set to 'AUTO'"
+        state.stateRecSwitch = 0
+        state.stateRecord = "auto"
+        sendEvent(name: "recStatus", value: "auto", isStateChange: true, displayed: false)
+    }
+    else {
+        log.info "Change Record: Recording set to 'OFF'"
+        state.stateRecSwitch = 2
+        state.stateRecord = "off"
+        sendEvent(name: "recStatus", value: "off", isStateChange: true, displayed: false)
     }
     String apiCommand = setFlipMirrorMotionRotateNv()
     hubGet(apiCommand)
@@ -495,7 +527,7 @@ private doToggleRotation(Boolean doHubGet) {
 }
 
 private String setFlipMirrorMotionRotateNv() {  // Return the string of commands needed to set the Flip/Mirror/Motion/NightVision/Rotate camera states
-    doDebug("setFlipMirrorMotionRotateNv -> Current: flipStatus = $state.stateFlip, mirrorStatus = $state.stateMirror, motionStatus = $state.stateMotion, nvStatus = $state.stateNvStatus, rotateStatus = $state.stateRotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.stateMotionSensitivity ?: 'Default:1'})")
+    doDebug("setFlipMirrorMotionRotateNv -> Current: flipStatus = $state.stateFlip, mirrorStatus = $state.stateMirror, motionStatus = $state.stateMotion, nvStatus = $state.stateNvStatus, recordStatus = $state.stateRecord, rotateStatus = $state.stateRotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.stateMotionSensitivity ?: 'Default:1'})")
 
     // Until I turn this into a Parent -> Child relationship, make sure all of the state values exist
     if (!state.stateFlip) { state.stateFlip = "off"}
@@ -504,12 +536,15 @@ private String setFlipMirrorMotionRotateNv() {  // Return the string of commands
     if (!state.stateMotionSensitivity) { state.stateMotionSensitivity = 1 }
     if (!state.stateNvStatus) { state.stateNvStatus = "off"}
     if (!state.stateNvSwitch) { state.stateNvSwitch = 0}
+    if (!state.stateRecord) { state.stateRecord = "off"}
+    if (!state.stateRecSwitch) { state.stateRecSwitch = 2}
     if (!state.stateRotate) { state.stateRotate = 0}
     if (!state.stateRotation) { state.stateRotation = "off"}
 
     String apiCommand = "/cgi-bin/configManager.cgi?action=setConfig" +
                         "&MotionDetect[$camChannel].Enable=${state.stateMotion == 'off' ? false : true}" +
                         "&MotionDetect[$camChannel].Level=$state.stateMotionSensitivity" +
+                        "&RecordMode[$camChannel].Mode=$state.stateRecSwitch" +
                         "&VideoInOptions[$camChannel].Flip=${state.stateFlip == 'off' ? false : true}" +
                         "&VideoInOptions[$camChannel].NightOptions.Flip=${state.stateFlip == 'off' ? false : true}" +
                         "&VideoInOptions[$camChannel].Mirror=${state.stateMirror == 'off' ? false : true}" +
@@ -523,7 +558,7 @@ private String setFlipMirrorMotionRotateNv() {  // Return the string of commands
 
 //*******************************  Network Commands  *******************************
 
-private hubGet(def apiCommand) {  // Called for all non-Image requests
+private hubGet(def apiCommand, Boolean isImage = false) {  // Called for all non-Image requests and Local IP Image requests
     doDebug("hubGet -> BEGIN")
     doDebug("hubGet -> apiCommand = $apiCommand (size = ${apiCommand.size()})")
 
@@ -549,7 +584,6 @@ private hubGet(def apiCommand) {  // Called for all non-Image requests
     def userPass = "Basic " + userPassAscii.encodeAsBase64().toString()
     headers.put("HOST", "${state.stateHost}:${camPort}")
     headers.put("Authorization", userPass)
-    headers.put("Content-Type", "text/html")
     doDebug("hubGet -> headers = ${headers.inspect()}")
 
     // Do the deed
@@ -559,7 +593,13 @@ private hubGet(def apiCommand) {  // Called for all non-Image requests
             path: apiCommand,
             headers: headers
         )
-        hubAction.options = [outputMsgToS3:false]
+        if (isImage) {
+            hubAction.options = [outputMsgToS3:true]
+        }
+        else {
+            hubAction.options = [outputMsgToS3:false]
+        }
+        doDebug("hubGet -> hubAction = $hubAction")
         hubAction
     }
     catch (Exception e) {
@@ -581,37 +621,45 @@ private hubGetImage(def apiCommand) {  // Called when taking a picture
         doDebug("hubGetImage -> Using IP '$state.stateHost'")
     }
 
-    // Set the Network Device Id
-    def hosthex = convertIPtoHex(state.stateHost).toUpperCase()
-    def porthex = convertPortToHex(camPort).toUpperCase()
-    device.deviceNetworkId = "$hosthex:$porthex"
-    doDebug("hubGetImage -> Network Device Id = $device.deviceNetworkId")
-
-    // Set our Params & Headers
-    def headers = [:]
-    def userPassAscii = "${camUser}:${camPassword}"
-    def userPass = "Basic " + userPassAscii.encodeAsBase64().toString()
-    headers.put("Authorization", userPass)
-    doDebug("hubGetImage -> headers = ${headers.inspect()}")
-
-    def params = [
-        uri: "http://${state.stateHost}:${camPort}",
-        path: apiCommand,
-        headers: headers
-    ]
-
-    // Do the deed
-    try {
-        httpGet(params) { response ->
-            response.headers.each {
-                doDebug("hubGetImage -> httpGet response for ${it.name} = ${it.value}")
-            }
-            doDebug("hubGetImage -> response contentType: ${response.contentType}")
-            parseHttpGetResponse(response)
-        }
+    // If this is a local IP, use HubAction
+    if (ipIsLocal(state.stateHost)) {
+        doDebug("hubGetImage -> Local IP detected: Switching to HubAction")
+        def hubAction = hubGet(apiCommand, true)
+        hubAction
     }
-    catch (Exception e) {
-        log.warn "hubGetImage -> 'httpGet' Exception -> $e"
+    else {
+        // Set the Network Device Id
+        def hosthex = convertIPtoHex(state.stateHost).toUpperCase()
+        def porthex = convertPortToHex(camPort).toUpperCase()
+        device.deviceNetworkId = "$hosthex:$porthex"
+        doDebug("hubGetImage -> Network Device Id = $device.deviceNetworkId")
+
+        // Set our Params & Headers
+        def headers = [:]
+        def userPassAscii = "${camUser}:${camPassword}"
+        def userPass = "Basic " + userPassAscii.encodeAsBase64().toString()
+        headers.put("Authorization", userPass)
+        doDebug("hubGetImage -> headers = ${headers.inspect()}")
+
+        def params = [
+            uri: "http://${state.stateHost}:${camPort}",
+            path: apiCommand,
+            headers: headers
+        ]
+
+        // Do the deed
+        try {
+            httpGet(params) { response ->
+                response.headers.each {
+                    doDebug("hubGetImage -> httpGet response for ${it.name} = ${it.value}")
+                }
+                doDebug("hubGetImage -> response contentType: ${response.contentType}")
+                parseHttpGetResponse(response)
+            }
+        }
+        catch (Exception e) {
+            log.warn "hubGetImage -> 'httpGet' Exception -> $e"
+        }
     }
 }
 
@@ -637,7 +685,11 @@ def parse(String description) {  // 'HubAction' Method: Parse events into attrib
     // Image Response
     if (descMap["bucket"] && descMap["key"]) {
         doDebug("parse -> Detected: S3 image response")
-        putImageInS3(descMap)
+        retResult = putImageInS3(descMap)
+    }
+    else if (descMap["headers"].contains("image/jpeg")) {
+        doDebug("parse -> Detected: S3 image response")
+        retResult = putImageInS3(descMap)
     }
     // Non-Image Response
     else if (descMap["headers"] && descMap["body"]) {
@@ -703,7 +755,7 @@ def putImageInS3(map) {
     doDebug("putImageInS3 -> BEGIN")
     try {
         def imageBytes = getS3Object(map.bucket, map.key + ".jpg")
-        doDebug("putImageInS3 -> imageBytes = $imageBytes")
+        doDebug("putImageInS3 -> S3Object = $imageBytes")
 
         if (imageBytes) {
             def s3ObjectContent = imageBytes.getObjectContent()
@@ -711,7 +763,7 @@ def putImageInS3(map) {
             if (image) {
                 def bytes = image.buf
 
-                // Broadcast our image file data (thanks to @RBoy for the imageDataJpeg saving)
+                // Broadcast our image file data (thanks to RBoy for the imageDataJpeg saving)
                 String str = bytes.encodeBase64()
                 sendEvent(name: "imageDataJpeg", value: str, isStateChange: true, displayed: false)
 
@@ -876,11 +928,31 @@ private processResponse(def bodyIn) {
             state.stateNvStatus = "auto"
             sendEvent(name: "ledStatus", value: "auto", isStateChange: true, displayed: false)
         }
+
+        // Record
+        if (body.contains("RecordMode[$camChannel].Mode=2") && (state.stateRecSwitch != 2)) {
+            log.trace "processResponse -> Turning Night Vision 'OFF'"
+            state.stateRecSwitch = 2
+            state.stateRecord = "off"
+            sendEvent(name: "recStatus", value: "off", isStateChange: true, displayed: false)
+        }
+        else if (body.contains("RecordMode[$camChannel].Mode=1") && (state.stateRecSwitch != 1)) {
+            log.trace "processResponse -> Turning Night Vision 'ON'"
+            state.stateRecSwitch = 1
+            state.stateRecord = "on"
+            sendEvent(name: "recStatus", value: "on", isStateChange: true, displayed: false)
+        }
+        else if (body.contains("RecordMode[$camChannel].Mode=0") && (state.stateRecSwitch != 0)) {
+            log.trace "processResponse -> Turning Night Vision to 'AUTO'"
+            state.stateRecSwitch = 0
+            state.stateRecord = "auto"
+            sendEvent(name: "recStatus", value: "auto", isStateChange: true, displayed: false)
+        }
     }
     catch (Exception e) {
         log.warn "processResponse -> Exception thrown: $e"
     }
-    doDebug("processResponse -> New: flipStatus = $state.stateFlip, mirrorStatus = $state.stateMirror, motionStatus = $state.stateMotion, nvStatus = $state.stateNvStatus, rotateStatus = $state.stateRotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.stateMotionSensitivity ?: 'Default:1'})")
+    doDebug("processResponse -> New: flipStatus = $state.stateFlip, mirrorStatus = $state.stateMirror, motionStatus = $state.stateMotion, nvStatus = $state.stateNvStatus, recordStatus = $state.stateRecord, rotateStatus = $state.stateRotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.stateMotionSensitivity ?: 'Default:1'})")
     doDebug("processResponse -> END")
     return retResult
 }
@@ -1002,7 +1074,7 @@ private Boolean ipIsLocal(ipAddress) {
             }
             ipBinary = ipBinary.take(size)
         }
-        doDebug("ipIsLocal -> Host IP '$ipAddress' is ${if(localAns) { 'Local' } else { 'Public' }}")
+        doDebug("ipIsLocal -> Host IP '$ipAddress' is ${localAns ? 'Local' : 'Public' }")
         return localAns
     }
     catch (Exception e) {
