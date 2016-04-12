@@ -1,7 +1,7 @@
 /**
  *  Amcrest Camera
  *
- *  Copyright © 2016 David Guindon, (Belgarion on SmartThings)
+ *  Copyright 2016 Belgarion, (programmer_dave@yahoo.com)
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -19,10 +19,10 @@
  *     THIS code only and any reference to these resources beyond this use is expressly prohibited.
  *
  *  Citations:
- *   - Patrick Stuart: Based on all of the hard work he put into his Generic Camera device.  Very educational!
+ *   - pstuart: For the efforts he put into his Generic Camera device and various posts.  Very educational!
  *   - tgauchat and RBoy: For the "convertHostnameToIPAddress" macro.
  *   - slagle, eparkerjr and scottinpollock: For their efforts on the great Foscam & D-Link device types.
- *   - RBoy: Thank you for the code for making the JPEG image available to other apps.
+ *   - RBoy: For the code making the JPEG image available to other apps.
  *
  *  Release History:
  *    2016-04-10: v1.0.0 = Initial release
@@ -69,8 +69,8 @@ metadata {
 
     preferences {
         input("camIP", "string", title:"Hostname or IP Address", description: "Enter the Hostname or IP Address of the camera", required: true, displayDuringSetup: true)
-        input("camPort", "string", title:"Port", description: "Enter the Port Number assigned to the camera", defaultValue: 80 , required: true, displayDuringSetup: true)
-        input("camUser", "string", title:"Account Username", description: "Enter the Account Username to use", required: true, displayDuringSetup: true)
+        input("camPort", "string", title:"Port", description: "Enter the Port Number to use (a local IP typically uses 80)", defaultValue: 80 , required: true, displayDuringSetup: true)
+        input("camUser", "string", title:"Account Username", description: "Enter the Account Username", required: true, displayDuringSetup: true)
         input("camPassword", "password", title:"Account Password", description: "Enter the Password for this Account Username", required: true, displayDuringSetup: true)
         input("camChannel", "range: 0..9", title:"Video Channel", description: "Specify the image channel to use (typically 0)", defaultValue: 0, required: true, displayDuringSetup: true)
         input("camDebug", "bool", title:"Camera Debug Mode", description: "Enable to display debugging information in the 'Live Logging' view", defaultValue: false, required: false, displayDuringSetup: true)
@@ -207,22 +207,22 @@ def take() {
 
 def changeNvLED() {
     doDebug("changeNvLED -> hubGet Enabled?: ${doHubGet ?: false}")
-    if (!state.stateNvStatus || (state.stateNvStatus == "off")) {
+    if (!state.NvStatus || (state.NvStatus == "off")) {
         log.info "Change NightVision: IR LED set to 'ON'"
-        state.stateNvSwitch = 3
-        state.stateNvStatus = "on"
+        state.NvSwitch = 3
+        state.NvStatus = "on"
         sendEvent(name: "ledStatus", value: "on", isStateChange: true, displayed: false)
     }
-    else if (state.stateNvStatus == "on") {
+    else if (state.NvStatus == "on") {
         log.info "Change NightVision: IR LED set to 'AUTO'"
-        state.stateNvSwitch = 4
-        state.stateNvStatus = "auto"
+        state.NvSwitch = 4
+        state.NvStatus = "auto"
         sendEvent(name: "ledStatus", value: "auto", isStateChange: true, displayed: false)
     }
     else {
         log.info "Change NightVision: IR LED set to 'OFF'"
-        state.stateNvSwitch = 0
-        state.stateNvStatus = "off"
+        state.NvSwitch = 0
+        state.NvStatus = "off"
         sendEvent(name: "ledStatus", value: "off", isStateChange: true, displayed: false)
     }
     String apiCommand = setFlipMirrorMotionRotateNv()
@@ -231,22 +231,22 @@ def changeNvLED() {
 
 def changeRecord() {
     doDebug("changeRecord -> hubGet Enabled?: ${doHubGet ?: false}")
-    if (!state.stateRecord || (state.stateRecord == "off")) {
+    if (!state.Record || (state.Record == "off")) {
         log.info "Change Record: Recording set to 'ON'"
-        state.stateRecSwitch = 1
-        state.stateRecord = "on"
+        state.RecSwitch = 1
+        state.Record = "on"
         sendEvent(name: "recStatus", value: "on", isStateChange: true, displayed: false)
     }
-    else if (state.stateRecord == "on") {
+    else if (state.Record == "on") {
         log.info "Change Record: Recording set to 'AUTO'"
-        state.stateRecSwitch = 0
-        state.stateRecord = "auto"
+        state.RecSwitch = 0
+        state.Record = "auto"
         sendEvent(name: "recStatus", value: "auto", isStateChange: true, displayed: false)
     }
     else {
         log.info "Change Record: Recording set to 'OFF'"
-        state.stateRecSwitch = 2
-        state.stateRecord = "off"
+        state.RecSwitch = 2
+        state.Record = "off"
         sendEvent(name: "recStatus", value: "off", isStateChange: true, displayed: false)
     }
     String apiCommand = setFlipMirrorMotionRotateNv()
@@ -347,9 +347,9 @@ def setLevelSpeed(int value) {
 def setLevelSensitivity(int value) {
     log.info "Adjusting Motion Detect Sensitivity..."
     def oldSensitivity = device.currentValue('levelSensitivity')
-    state.stateMotionSensitivity = value
-    doDebug("setLevel -> Motion Detect Sensitivity changed from '${device.currentValue('levelSensitivity') ?: 'Default:1'}' to '$state.stateMotionSensitivity'")
-    sendEvent(name: "levelSensitivity", value: state.stateMotionSensitivity, isStateChange: true, displayed: false)
+    state.MotionSensitivity = value
+    doDebug("setLevel -> Motion Detect Sensitivity changed from '${device.currentValue('levelSensitivity') ?: 'Default:1'}' to '$state.MotionSensitivity'")
+    sendEvent(name: "levelSensitivity", value: state.MotionSensitivity, isStateChange: true, displayed: false)
     doToggleMotionSensitivity(true)
 }
 
@@ -365,6 +365,10 @@ def toggleMotion() {
     doToggleMotion(true)
 }
 
+def updated() {
+    doDebug("'updated()' called...")
+}
+
 def zoomIn() {
     log.info "Zooming In"
     sendEvent(name: "zoomIn", value: "", isStateChange: true, displayed: false)
@@ -377,18 +381,6 @@ def zoomOut() {
     delayBetween([doMoveCmd("start", "ZoomWide", "0", "${device.currentValue('levelSpeed') ?: 1}", "0", "0"), doMoveCmd("stop", "ZoomWide", "0", "${device.currentValue('levelSpeed') ?: 1}", "0", "0")], msDelay())
 }
 
-def configure() {
-    doDebug("'configure()' called...")
-}
-
-def initialize() {
-    doDebug("'initialize()' called...")
-}
-
-def updated() {
-    doDebug("'updated()' called...")
-}
-
 //*******************************  Private Commands  *******************************
 
 private doMoveCmd(String action, String motion, String argOne, String argTwo, String argThree, String argFour) {
@@ -399,14 +391,14 @@ private doMoveCmd(String action, String motion, String argOne, String argTwo, St
 private doToggleFlip(Boolean doHubGet) {
     doDebug("doToggleFlip -> BEGIN (hubGet Enabled?: ${doHubGet ?: false})")
     if (doHubGet == true) {
-        if (!state.stateFlip || (state.stateFlip == "off")) {
+        if (!state.Flip || (state.Flip == "off")) {
             log.info "Toggle Image Flip: Turning ON"
-            state.stateFlip = "on"
+            state.Flip = "on"
             sendEvent(name: "flipStatus", value: "on", isStateChange: true, displayed: false)
         }
         else {
             log.info "Toggle Image Flip: Turning OFF"
-            state.stateFlip = "off"
+            state.Flip = "off"
             sendEvent(name: "flipStatus", value: "off", isStateChange: true, displayed: false)
         }
         String apiCommand = setFlipMirrorMotionRotateNv()
@@ -425,14 +417,14 @@ private doToggleFlip(Boolean doHubGet) {
 private doToggleMirror(Boolean doHubGet) {
     doDebug("doToggleMirror -> BEGIN (hubGet Enabled?: ${doHubGet ?: false})")
     if (doHubGet == true) {
-        if (!state.stateMirror || (state.stateMirror == "off")) {
+        if (!state.Mirror || (state.Mirror == "off")) {
             log.info "Toggle Image Mirroring: Turning ON"
-            state.stateMirror = "on"
+            state.Mirror = "on"
             sendEvent(name: "mirrorStatus", value: "on", isStateChange: true, displayed: false)
         }
         else {
             log.info "Toggle Image Mirroring: Turning OFF"
-            state.stateMirror = "off"
+            state.Mirror = "off"
             sendEvent(name: "mirrorStatus", value: "off", isStateChange: true, displayed: false)
         }
         String apiCommand = setFlipMirrorMotionRotateNv()
@@ -451,14 +443,14 @@ private doToggleMirror(Boolean doHubGet) {
 private doToggleMotion(Boolean doHubGet) {
     doDebug("doToggleMotion -> BEGIN (hubGet Enabled?: ${doHubGet ?: false})")
     if (doHubGet == true) {
-        if (!state.stateMotion || (state.stateMotion == "off")) {
+        if (!state.Motion || (state.Motion == "off")) {
             log.info "Toggle Motion: Turning 'Motion Sensor' ON"
-            state.stateMotion = "on"
+            state.Motion = "on"
             sendEvent(name: "motionStatus", value: "on", isStateChange: true, displayed: false)
         }
         else {
             log.info "Toggle Motion: Turning 'Motion Sensor' OFF"
-            state.stateMotion = "off"
+            state.Motion = "off"
             sendEvent(name: "motionStatus", value: "off", isStateChange: true, displayed: false)
         }
         String apiCommand = setFlipMirrorMotionRotateNv()
@@ -477,12 +469,12 @@ private doToggleMotion(Boolean doHubGet) {
 private doToggleMotionSensitivity(Boolean doHubGet) {
     doDebug("doToggleMotionSensitivity -> BEGIN (hubGet Enabled?: ${doHubGet ?: false})")
     if (doHubGet == true) {
-        if (!state.stateMotionSensitivity) {
+        if (!state.MotionSensitivity) {
             log.info "Setting Motion Sensitivity: Level set to 1"
-            state.stateMotionSensitivity = 1
+            state.MotionSensitivity = 1
         }
         else {
-            log.info "Setting Motion Sensitivity: Level set to $state.stateMotionSensitivity"
+            log.info "Setting Motion Sensitivity: Level set to $state.MotionSensitivity"
         }
         String apiCommand = setFlipMirrorMotionRotateNv()
         hubGet(apiCommand)
@@ -492,67 +484,67 @@ private doToggleMotionSensitivity(Boolean doHubGet) {
 private doToggleRotation(Boolean doHubGet) {
     doDebug("doToggleRotation -> BEGIN (hubGet Enabled?: ${doHubGet ?: false})")
     if (doHubGet == true) {
-        if (!state.stateRotation || (state.stateRotation == "off")) {
+        if (!state.Rotation || (state.Rotation == "off")) {
             log.info "Toggle 90° Rotation: Rotation set to 'Clockwise'"
-            state.stateRotate = 1
-            state.stateRotation = "cw"
+            state.Rotate = 1
+            state.Rotation = "cw"
             sendEvent(name: "rotateStatus", value: "cw", isStateChange: true, displayed: false)
         }
-        else if (state.stateRotation == "cw") {
+        else if (state.Rotation == "cw") {
             log.info "Toggle 90° Rotation: Rotation set to 'Counter-Clockwise'"
-            state.stateRotate = 2
-            state.stateRotation = "ccw"
+            state.Rotate = 2
+            state.Rotation = "ccw"
             sendEvent(name: "rotateStatus", value: "ccw", isStateChange: true, displayed: false)
         }
         else {
             log.info "Toggle 90° Rotation: Rotation turned 'OFF'"
-            state.stateRotate = 0
-            state.stateRotation = "off"
+            state.Rotate = 0
+            state.Rotation = "off"
             sendEvent(name: "rotateStatus", value: "off", isStateChange: true, displayed: false)
         }
         String apiCommand = setFlipMirrorMotionRotateNv()
         hubGet(apiCommand)
     }
     else {
-        if (rotateStatus == "off" && (state.stateRotation == "cw")) {
+        if (rotateStatus == "off" && (state.Rotation == "cw")) {
             log.info "Toggle 90° Rotation: Rotation set to 'Clockwise'"
         }
-        else if (rotateStatus == "cw" && (state.stateRotation == "ccw")) {
+        else if (rotateStatus == "cw" && (state.Rotation == "ccw")) {
             log.info "Toggle 90° Rotation: Rotation set to 'Counter-Clockwise'"
         }
-        else if (rotateStatus == "ccw" && (state.stateRotation == "off")) {
+        else if (rotateStatus == "ccw" && (state.Rotation == "off")) {
             log.info "Toggle 90° Rotation: Rotation turned 'OFF'"
         }
     }
 }
 
 private String setFlipMirrorMotionRotateNv() {  // Return the string of commands needed to set the Flip/Mirror/Motion/NightVision/Rotate camera states
-    doDebug("setFlipMirrorMotionRotateNv -> Current: flipStatus = $state.stateFlip, mirrorStatus = $state.stateMirror, motionStatus = $state.stateMotion, nvStatus = $state.stateNvStatus, recordStatus = $state.stateRecord, rotateStatus = $state.stateRotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.stateMotionSensitivity ?: 'Default:1'})")
+    doDebug("setFlipMirrorMotionRotateNv -> Current: flipStatus = $state.Flip, mirrorStatus = $state.Mirror, motionStatus = $state.Motion, nvStatus = $state.NvStatus, recordStatus = $state.Record, rotateStatus = $state.Rotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.MotionSensitivity ?: 'Default:1'})")
 
     // Until I turn this into a Parent -> Child relationship, make sure all of the state values exist
-    if (!state.stateFlip) { state.stateFlip = "off"}
-    if (!state.stateMirror) { state.stateMirror = "off"}
-    if (!state.stateMotion) { state.stateMotion = "off"}
-    if (!state.stateMotionSensitivity) { state.stateMotionSensitivity = 1 }
-    if (!state.stateNvStatus) { state.stateNvStatus = "off"}
-    if (!state.stateNvSwitch) { state.stateNvSwitch = 0}
-    if (!state.stateRecord) { state.stateRecord = "off"}
-    if (!state.stateRecSwitch) { state.stateRecSwitch = 2}
-    if (!state.stateRotate) { state.stateRotate = 0}
-    if (!state.stateRotation) { state.stateRotation = "off"}
+    if (!state.Flip) { state.Flip = "off"}
+    if (!state.Mirror) { state.Mirror = "off"}
+    if (!state.Motion) { state.Motion = "off"}
+    if (!state.MotionSensitivity) { state.MotionSensitivity = 1 }
+    if (!state.NvStatus) { state.NvStatus = "off"}
+    if (!state.NvSwitch) { state.NvSwitch = 0}
+    if (!state.Record) { state.Record = "off"}
+    if (!state.RecSwitch) { state.RecSwitch = 2}
+    if (!state.Rotate) { state.Rotate = 0}
+    if (!state.Rotation) { state.Rotation = "off"}
 
     String apiCommand = "/cgi-bin/configManager.cgi?action=setConfig" +
-                        "&MotionDetect[$camChannel].Enable=${state.stateMotion == 'off' ? false : true}" +
-                        "&MotionDetect[$camChannel].Level=$state.stateMotionSensitivity" +
-                        "&RecordMode[$camChannel].Mode=$state.stateRecSwitch" +
-                        "&VideoInOptions[$camChannel].Flip=${state.stateFlip == 'off' ? false : true}" +
-                        "&VideoInOptions[$camChannel].NightOptions.Flip=${state.stateFlip == 'off' ? false : true}" +
-                        "&VideoInOptions[$camChannel].Mirror=${state.stateMirror == 'off' ? false : true}" +
-                        "&VideoInOptions[$camChannel].NightOptions.Mirror=${state.stateMirror == 'off' ? false : true}" +
-                        "&VideoInOptions[$camChannel].NightOptions.SwitchMode=$state.stateNvSwitch" +
-                        "&VideoInOptions[$camChannel].Rotate90=$state.stateRotate" +
-                        "&VideoInOptions[$camChannel].NightOptions.Rotate90=$state.stateRotate" +
-                        "&VideoInOptions[$camChannel].NightOptions.SwitchMode=$state.stateNvSwitch"
+                        "&MotionDetect[$camChannel].Enable=${state.Motion == 'off' ? false : true}" +
+                        "&MotionDetect[$camChannel].Level=$state.MotionSensitivity" +
+                        "&RecordMode[$camChannel].Mode=$state.RecSwitch" +
+                        "&VideoInOptions[$camChannel].Flip=${state.Flip == 'off' ? false : true}" +
+                        "&VideoInOptions[$camChannel].NightOptions.Flip=${state.Flip == 'off' ? false : true}" +
+                        "&VideoInOptions[$camChannel].Mirror=${state.Mirror == 'off' ? false : true}" +
+                        "&VideoInOptions[$camChannel].NightOptions.Mirror=${state.Mirror == 'off' ? false : true}" +
+                        "&VideoInOptions[$camChannel].NightOptions.SwitchMode=$state.NvSwitch" +
+                        "&VideoInOptions[$camChannel].Rotate90=$state.Rotate" +
+                        "&VideoInOptions[$camChannel].NightOptions.Rotate90=$state.Rotate" +
+                        "&VideoInOptions[$camChannel].NightOptions.SwitchMode=$state.NvSwitch"
 
 }
 
@@ -564,16 +556,16 @@ private hubGet(def apiCommand, Boolean isImage = false) {  // Called for all non
 
     // Make sure we have an IP
     if (isIpAddress(camIP) != true) {
-        state.stateHost = convertHostnameToIPAddress(camIP)
-        doDebug("hubGet -> Host name '$camIP' resolved to IP '$state.stateHost'")
+        state.Host = convertHostnameToIPAddress(camIP)
+        doDebug("hubGet -> Host name '$camIP' resolved to IP '$state.Host'")
     }
     else {
-        state.stateHost = camIP
-        doDebug("hubGet -> Using IP '$state.stateHost'")
+        state.Host = camIP
+        doDebug("hubGet -> Using IP '$state.Host'")
     }
 
     // Set the Network Device Id
-    def hosthex = convertIPtoHex(state.stateHost).toUpperCase()
+    def hosthex = convertIPtoHex(state.Host).toUpperCase()
     def porthex = convertPortToHex(camPort).toUpperCase()
     device.deviceNetworkId = "$hosthex:$porthex"
     doDebug("hubGet -> Network Device Id = $device.deviceNetworkId")
@@ -582,7 +574,7 @@ private hubGet(def apiCommand, Boolean isImage = false) {  // Called for all non
     def headers = [:]
     def userPassAscii = "${camUser}:${camPassword}"
     def userPass = "Basic " + userPassAscii.encodeAsBase64().toString()
-    headers.put("HOST", "${state.stateHost}:${camPort}")
+    headers.put("HOST", "${state.Host}:${camPort}")
     headers.put("Authorization", userPass)
     doDebug("hubGet -> headers = ${headers.inspect()}")
 
@@ -613,23 +605,23 @@ private hubGetImage(def apiCommand) {  // Called when taking a picture
 
     // Make sure we have an IP
     if (isIpAddress(camIP) != true) {
-        state.stateHost = convertHostnameToIPAddress(camIP)
-        doDebug("hubGetImage -> Host name '$camIP' resolved to IP '$state.stateHost'")
+        state.Host = convertHostnameToIPAddress(camIP)
+        doDebug("hubGetImage -> Host name '$camIP' resolved to IP '$state.Host'")
     }
     else {
-        state.stateHost = camIP
-        doDebug("hubGetImage -> Using IP '$state.stateHost'")
+        state.Host = camIP
+        doDebug("hubGetImage -> Using IP '$state.Host'")
     }
 
     // If this is a local IP, use HubAction
-    if (ipIsLocal(state.stateHost)) {
+    if (ipIsLocal(state.Host)) {
         doDebug("hubGetImage -> Local IP detected: Switching to HubAction")
         def hubAction = hubGet(apiCommand, true)
         hubAction
     }
     else {
         // Set the Network Device Id
-        def hosthex = convertIPtoHex(state.stateHost).toUpperCase()
+        def hosthex = convertIPtoHex(state.Host).toUpperCase()
         def porthex = convertPortToHex(camPort).toUpperCase()
         device.deviceNetworkId = "$hosthex:$porthex"
         doDebug("hubGetImage -> Network Device Id = $device.deviceNetworkId")
@@ -642,7 +634,7 @@ private hubGetImage(def apiCommand) {  // Called when taking a picture
         doDebug("hubGetImage -> headers = ${headers.inspect()}")
 
         def params = [
-            uri: "http://${state.stateHost}:${camPort}",
+            uri: "http://${state.Host}:${camPort}",
             path: apiCommand,
             headers: headers
         ]
@@ -743,7 +735,7 @@ def parseHttpGetResponse(response) {  // 'httpGet' Method: Parse events into att
         }
     }
     else { // Otherwise process the camera response codes
-        log.warn "Error response from ${state.stateHost}:${camPort}, HTTP Response code = $response.status"
+        log.warn "Error response from ${state.Host}:${camPort}, HTTP Response code = $response.status"
     }
     doDebug("parseHttpGetResponse -> END")
     return retResult
@@ -828,38 +820,38 @@ private processResponse(def bodyIn) {
         }
 
         // Flip
-        if (body.contains("VideoInOptions[$camChannel].Flip=false") && (state.stateFlip != "off")) {
+        if (body.contains("VideoInOptions[$camChannel].Flip=false") && (state.Flip != "off")) {
             log.trace "processResponse -> Turning Flip Image 'OFF'"
-            state.stateFlip = "off"
+            state.Flip = "off"
             sendEvent(name: "flipStatus", value: "off", isStateChange: true, displayed: false)
         }
-        else if (body.contains("VideoInOptions[$camChannel].Flip=true") && (state.stateFlip != "on")) {
+        else if (body.contains("VideoInOptions[$camChannel].Flip=true") && (state.Flip != "on")) {
             log.trace "processResponse -> Turning Flip Image 'ON'"
-            state.stateFlip = "on"
+            state.Flip = "on"
             sendEvent(name: "flipStatus", value: "on", isStateChange: true, displayed: false)
         }
 
         // Mirror
-        if (body.contains("VideoInOptions[$camChannel].Mirror=false") && (state.stateMirror != "off")) {
+        if (body.contains("VideoInOptions[$camChannel].Mirror=false") && (state.Mirror != "off")) {
             log.trace "processResponse -> Turning Mirror Image 'OFF'"
-            state.stateMirror = "off"
+            state.Mirror = "off"
             sendEvent(name: "mirrorStatus", value: "off", isStateChange: true, displayed: false)
         }
-        else if (body.contains("VideoInOptions[$camChannel].Mirror=true") && (state.stateMirror != "on")) {
+        else if (body.contains("VideoInOptions[$camChannel].Mirror=true") && (state.Mirror != "on")) {
             log.trace "processResponse -> Turning Mirror Image 'ON'"
-            state.stateMirror = "on"
+            state.Mirror = "on"
             sendEvent(name: "mirrorStatus", value: "on", isStateChange: true, displayed: false)
         }
 
         // Motion Detection
-        if (body.contains("MotionDetect[$camChannel].Enable=false") && (state.stateMotion != "off")) {
+        if (body.contains("MotionDetect[$camChannel].Enable=false") && (state.Motion != "off")) {
             log.trace "processResponse -> Turning Motion Sensor 'OFF'"
-            state.stateMotion = "off"
+            state.Motion = "off"
             sendEvent(name: "motionStatus", value: "off", isStateChange: true, displayed: false)
         }
-        else if (body.contains("MotionDetect[$camChannel].Enable=true") && (state.stateMotion != "on")) {
+        else if (body.contains("MotionDetect[$camChannel].Enable=true") && (state.Motion != "on")) {
             log.trace "processResponse -> Turning Motion Sensor 'ON'"
-            state.stateMotion = "on"
+            state.Motion = "on"
             sendEvent(name: "motionStatus", value: "on", isStateChange: true, displayed: false)
         }
 
@@ -890,69 +882,69 @@ private processResponse(def bodyIn) {
         }
 
         // Rotation
-        if (body.contains("VideoInOptions[$camChannel].Rotate90=0") && (state.stateRotate != 0)) {
+        if (body.contains("VideoInOptions[$camChannel].Rotate90=0") && (state.Rotate != 0)) {
             log.trace "processResponse -> Setting Rotation to 0°"
-            state.stateRotate = 0
-            state.stateRotation = "off"
+            state.Rotate = 0
+            state.Rotation = "off"
             sendEvent(name: "rotateStatus", value: "off", isStateChange: true, displayed: false)
         }
-        else if (body.contains("VideoInOptions[$camChannel].Rotate90=1") && (state.stateRotate != 1)) {
+        else if (body.contains("VideoInOptions[$camChannel].Rotate90=1") && (state.Rotate != 1)) {
             log.trace "processResponse -> Setting Rotation to 90°"
-            state.stateRotate = 1
-            state.stateRotation = "cw"
+            state.Rotate = 1
+            state.Rotation = "cw"
             sendEvent(name: "rotateStatus", value: "cw", isStateChange: true, displayed: false)
         }
-        else if (body.contains("VideoInOptions[$camChannel].Rotate90=2") && (state.stateRotate != 2)) {
+        else if (body.contains("VideoInOptions[$camChannel].Rotate90=2") && (state.Rotate != 2)) {
             log.trace "processResponse -> Setting Rotation to 270°"
-            state.stateRotate = 2
-            state.stateRotation = "ccw"
+            state.Rotate = 2
+            state.Rotation = "ccw"
             sendEvent(name: "rotateStatus", value: "ccw", isStateChange: true, displayed: false)
         }
 
         // NightVision
-        if (body.contains("VideoInOptions[$camChannel].NightOptions.SwitchMode=0") && (state.stateNvSwitch != 0)) {
+        if (body.contains("VideoInOptions[$camChannel].NightOptions.SwitchMode=0") && (state.NvSwitch != 0)) {
             log.trace "processResponse -> Turning Night Vision 'OFF'"
-            state.stateNvSwitch = 0
-            state.stateNvStatus = "off"
+            state.NvSwitch = 0
+            state.NvStatus = "off"
             sendEvent(name: "ledStatus", value: "off", isStateChange: true, displayed: false)
         }
-        else if (body.contains("VideoInOptions[$camChannel].NightOptions.SwitchMode=3") && (state.stateNvSwitch != 3)) {
+        else if (body.contains("VideoInOptions[$camChannel].NightOptions.SwitchMode=3") && (state.NvSwitch != 3)) {
             log.trace "processResponse -> Turning Night Vision 'ON'"
-            state.stateNvSwitch = 3
-            state.stateNvStatus = "on"
+            state.NvSwitch = 3
+            state.NvStatus = "on"
             sendEvent(name: "ledStatus", value: "on", isStateChange: true, displayed: false)
         }
-        else if (body.contains("VideoInOptions[$camChannel].NightOptions.SwitchMode=4") && (state.stateNvSwitch != 4)) {
+        else if (body.contains("VideoInOptions[$camChannel].NightOptions.SwitchMode=4") && (state.NvSwitch != 4)) {
             log.trace "processResponse -> Turning Night Vision to 'AUTO'"
-            state.stateNvSwitch = 4
-            state.stateNvStatus = "auto"
+            state.NvSwitch = 4
+            state.NvStatus = "auto"
             sendEvent(name: "ledStatus", value: "auto", isStateChange: true, displayed: false)
         }
 
         // Record
-        if (body.contains("RecordMode[$camChannel].Mode=2") && (state.stateRecSwitch != 2)) {
+        if (body.contains("RecordMode[$camChannel].Mode=2") && (state.RecSwitch != 2)) {
             log.trace "processResponse -> Turning Night Vision 'OFF'"
-            state.stateRecSwitch = 2
-            state.stateRecord = "off"
+            state.RecSwitch = 2
+            state.Record = "off"
             sendEvent(name: "recStatus", value: "off", isStateChange: true, displayed: false)
         }
-        else if (body.contains("RecordMode[$camChannel].Mode=1") && (state.stateRecSwitch != 1)) {
+        else if (body.contains("RecordMode[$camChannel].Mode=1") && (state.RecSwitch != 1)) {
             log.trace "processResponse -> Turning Night Vision 'ON'"
-            state.stateRecSwitch = 1
-            state.stateRecord = "on"
+            state.RecSwitch = 1
+            state.Record = "on"
             sendEvent(name: "recStatus", value: "on", isStateChange: true, displayed: false)
         }
-        else if (body.contains("RecordMode[$camChannel].Mode=0") && (state.stateRecSwitch != 0)) {
+        else if (body.contains("RecordMode[$camChannel].Mode=0") && (state.RecSwitch != 0)) {
             log.trace "processResponse -> Turning Night Vision to 'AUTO'"
-            state.stateRecSwitch = 0
-            state.stateRecord = "auto"
+            state.RecSwitch = 0
+            state.Record = "auto"
             sendEvent(name: "recStatus", value: "auto", isStateChange: true, displayed: false)
         }
     }
     catch (Exception e) {
         log.warn "processResponse -> Exception thrown: $e"
     }
-    doDebug("processResponse -> New: flipStatus = $state.stateFlip, mirrorStatus = $state.stateMirror, motionStatus = $state.stateMotion, nvStatus = $state.stateNvStatus, recordStatus = $state.stateRecord, rotateStatus = $state.stateRotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.stateMotionSensitivity ?: 'Default:1'})")
+    doDebug("processResponse -> New: flipStatus = $state.Flip, mirrorStatus = $state.Mirror, motionStatus = $state.Motion, nvStatus = $state.NvStatus, recordStatus = $state.Record, rotateStatus = $state.Rotation (movement speed = ${device.currentValue('levelSpeed') ?: 'Default:1'}, motion sensitivity = ${state.MotionSensitivity ?: 'Default:1'})")
     doDebug("processResponse -> END")
     return retResult
 }
@@ -1004,7 +996,7 @@ private String convertIPtoBinary(ipAddress) {
     }
     catch ( Exception e ) {
         log.error "IP Address is invalid ($ipAddress), Error: $e"
-        return // Nothing to return
+        return null // Nothing to return
     }
 }
 
@@ -1016,7 +1008,7 @@ private String convertIPtoHex(ipAddress) {
     }
     catch ( Exception e ) {
         log.error "IP Address is invalid ($ipAddress), Error: $e"
-        return //Nothing to return
+        return null //Nothing to return
     }
 }
 
@@ -1028,7 +1020,7 @@ private String convertPortToHex(port) {
     }
     catch ( Exception e ) {
         log.error "Port is invalid ($ipAddress), Error: $e"
-        return //Nothing to return
+        return null //Nothing to return
     }
 }
 
