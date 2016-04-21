@@ -26,11 +26,13 @@
  *
  *  Release History:
  *    2016-04-12: v1.0.0 = Initial release
+ *    2016-04-21: v1.1.0 = Added the 'Actuator' capability (use with caution!) and a version command
  *
  **/
 
 metadata {
     definition (name: "Amcrest Camera", namespace: "belgarion", author: "Belgarion") {
+        capability "Actuator"
         capability "Image Capture"
         capability "Motion Sensor"
         capability "Polling"
@@ -42,6 +44,7 @@ metadata {
         attribute "hubactionMode", "string"
         attribute "imageDataJpeg", "string"
 
+        command "appVersion"
         command "changeNvLED"
         command "changeRecord"
         command "changeRotation"
@@ -195,6 +198,10 @@ metadata {
 }
 
 //*******************************  Commands  ***************************************
+
+def appVersion() {
+        return "1.1.0"
+}
 
 def take() {
     log.info "Taking Photo"
