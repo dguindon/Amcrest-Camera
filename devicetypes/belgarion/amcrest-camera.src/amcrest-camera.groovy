@@ -28,6 +28,7 @@
  *    2016-04-12: v1.0.0 = Initial release
  *    2016-04-21: v1.1.0 = Added the 'Actuator' capability (use with caution!) and a version command
  *    2016-04-23: v2.0.0 = Added video streaming and a complete UI redesign
+ *    2016-04-23: v2.1.0 = Allow toggle between MJPEG and RTSP live video streaming
  *
  **/
 
@@ -47,6 +48,7 @@ metadata {
 
         attribute "hubactionMode", "string"
         attribute "imageDataJpeg", "string"
+        attribute "streamType", "string"
 
         command "appVersion"
         command "changeNvLED"
@@ -68,6 +70,7 @@ metadata {
         command "toggleFlip"
         command "toggleMirror"
         command "toggleMotion"
+        command "toggleStreamType"
         command "videoStart"
         command "videoStop"
         command "videoSetResHD"
@@ -243,8 +246,9 @@ metadata {
         standardTile("labelSensitivity", "device.level",  width: 3, height: 1,inactiveLabel: false) {
             state "sensitivityLabel", label: "Motion Sensitivity", action: ""
         }
-        standardTile("blank", "device.image", width: 3, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "blank", label: "", action: "", icon: "", backgroundColor: "#FFFFFF"
+        standardTile("streamType", "device.streamType", width: 3, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "MJPEG", label: "MJPEG Stream", action: "toggleStreamType", icon: "", backgroundColor: "#FFFFFF"
+            state "RTSP", label: "RTSP Stream", action: "toggleStreamType", icon: "", backgroundColor: "#FFFFFF"
         }
 
         main "videoPlayer"
@@ -254,7 +258,7 @@ metadata {
                  "labelSpeed", "preset1", "preset2", "preset3",
                  "levelSliderControlSpeed", "preset4", "preset5", "preset6",
                  "labelSensitivity", "flipStatus", "mirrorStatus", "rotateStatus",
-                 "levelSliderControlSensitivity", "blank"])
+                 "levelSliderControlSensitivity", "streamType"])
     }
 }
 
@@ -272,7 +276,7 @@ mappings {
 //*******************************  Commands  ***************************************
 
 def appVersion() {
-        return "2.0.0"
+        return "2.1.0"
 }
 
 def changeNvLED() {
@@ -329,8 +333,11 @@ def changeRotation() {
 }
 
 def configure() {
-    doDebug "configure -> Executing"
+    doDebug("configure -> Executing")
     sendEvent(name: "switch", value: "on")
+    if (!device.currentValue('streamType')) {
+        toggleStreamType()
+    }
 }
 
 def getInHomeURL() {
@@ -472,6 +479,17 @@ def toggleMotion() {
     doToggleMotion(true)
 }
 
+def toggleStreamType() {
+    if (device.currentValue('streamType') != "MJPEG") {
+        log.info "toggleStreamType -> Image Streaming Mode Now 'MJPEG'"
+        sendEvent(name: "streamType", value: "MJPEG", isStateChange: true, displayed: false)
+    }
+    else {
+        log.info "toggleStreamType -> Image Streaming Mode Now 'RTSP'"
+        sendEvent(name: "streamType", value: "RTSP", isStateChange: true, displayed: false)
+    }
+}
+
 def updated() {
     doDebug("'updated()' called...")
     configure()
@@ -496,8 +514,21 @@ def videoStart() {
     log.info "videoStart -> Turning Video Streaming ON"
 
     def userPassAscii = "${camUser}:${camPassword}"
-    def apiCommand = "/cgi-bin/mjpg/video.cgi?channel=0&subtype=0"
-    def uri = "http://" + userPassAscii + "@${camIP}:${camPort}" + apiCommand
+    def apiCommand = ""
+    def usePort = ""
+    def useProtocol = ""
+    if (device.currentValue('streamType') == "MJPEG") {
+        apiCommand = "/cgi-bin/mjpg/video.cgi?channel=0&subtype=0"
+        usePort = camPort
+        useProtocol = "http://"
+    }
+    else {  // Let's allow RTSP streams, but only for port 554 for now
+        apiCommand = "/cam/realmonitor?channel=1&subtype=0"
+        usePort = 554
+        useProtocol = "rtsp://"
+    }
+    def uri = useProtocol + userPassAscii + "@${camIP}:${usePort}" + apiCommand
+    doDebug("videoStart -> Streaming ${device.currentValue('streamType')} video; apiCommand = ${apiCommand}, IP = ${camIP}, Port = ${usePort}")
 
     //parent.state.CameraStreamPath
     state.CameraInStreamPath = uri
