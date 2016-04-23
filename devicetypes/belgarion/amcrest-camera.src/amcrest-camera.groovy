@@ -34,6 +34,7 @@
 metadata {
     definition (name: "Amcrest Camera", namespace: "belgarion", author: "Belgarion") {
         capability "Actuator"
+        capability "Configuration"
         capability "Image Capture"
         capability "Motion Sensor"
         capability "Polling"
@@ -41,6 +42,8 @@ metadata {
         capability "Sensor"
         capability "Switch"
         capability "Switch Level"
+        capability "Video Camera"
+        capability "Video Capture"
 
         attribute "hubactionMode", "string"
         attribute "imageDataJpeg", "string"
@@ -65,6 +68,10 @@ metadata {
         command "toggleFlip"
         command "toggleMirror"
         command "toggleMotion"
+        command "videoStart"
+        command "videoStop"
+        command "videoSetResHD"
+        command "videoSetResSD"
         command "zoomIn"
         command "zoomOut"
     }
@@ -85,23 +92,101 @@ metadata {
 
 
     tiles(scale: 2) {
-        standardTile("take", "device.image", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+        multiAttributeTile(name: "videoPlayer", type: "videoPlayer", width: 6, height: 4) {
+            tileAttribute("device.switch", key: "CAMERA_STATUS") {
+                attributeState("on", label: "Active", action: "switch.off", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#79b821", defaultState: true)
+                attributeState("off", label: "Inactive", action: "switch.on", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#ffffff")
+                attributeState("restarting", label: "Connecting", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#53a7c0")
+                attributeState("unavailable", label: "Unavailable", action: "refresh.refresh", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#F22000")
+            }
+            tileAttribute("device.errorMessage", key: "CAMERA_ERROR_MESSAGE") {
+                attributeState("errorMessage", label: "", value: "", defaultState: true)
+            }
+            tileAttribute("device.camera", key: "PRIMARY_CONTROL") {
+                attributeState("on", label: "Active", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#79b821", defaultState: true)
+                attributeState("off", label: "Inactive", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#ffffff")
+                attributeState("restarting", label: "Connecting", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#53a7c0")
+                attributeState("unavailable", label: "Unavailable", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#F22000")
+            }
+            tileAttribute("device.startLive", key: "START_LIVE") {
+                attributeState("live", action: "videoStart", defaultState: true)
+            }
+            tileAttribute("device.stream", key: "STREAM_URL") {
+                attributeState("activeURL", defaultState: true)
+            }
+            tileAttribute("device.profile", key: "STREAM_QUALITY") {
+                attributeState("hd", label: "HD", action: "videoSetResHD", defaultState: true)
+                attributeState("sd", label: "SD", action: "videoSetResSD")
+            }
+            tileAttribute("device.betaLogo", key: "BETA_LOGO") {
+                attributeState("betaLogo", label: "", value: "", defaultState: true)
+            }
+        }
+
+        // Row 1
+        standardTile("take", "device.image", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "take", label: "Take", action: "Image Capture.take", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IPM-721S.png", backgroundColor: "#FFFFFF", nextState:"taking"
             state "taking", label:"Taking", action: "", icon: "st.camera.take-photo", backgroundColor: "#53a7c0"
             state "image", label: "Take", action: "Image Capture.take", icon: "st.camera.camera", backgroundColor: "#FFFFFF", nextState:"taking"
         }
-        standardTile("ledState", "device.ledStatus", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+        standardTile("ledState", "device.ledStatus", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "off", label: "", action: "changeNvLED", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IR-LED-Off.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "on", label: "", action: "changeNvLED", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IR-LED-On.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "auto", label: "", action: "changeNvLED", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/IR-LED-Auto.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "...", label: "...", action: "", nextState: "..."
         }
-        standardTile("motionStatus", "device.motionStatus", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
+        standardTile("motionStatus", "device.motionStatus", width: 1, height: 1, canChangeIcon: false, decoration: "flat") {
             state "off", label: "", action: "toggleMotion", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Motion-Off.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "on", label: "", action: "toggleMotion", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Motion-On.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "...", label: "...", action: "", nextState: "..."
         }
-        carouselTile("camDetails", "device.image", width: 6, height: 4) {
+        standardTile("zoomOut", "device.zoomOut", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false) {
+            state "zoomOut", label: "", action: "zoomOut", icon: "st.secondary.less", backgroundColor: "#FFFFFF", nextState: "zoomingOut"
+            state "zoomingOut", label: "", action: "", icon: "st.secondary.less", backgroundColor: "#00FF00", nextState: "zoomOut"
+        }
+        standardTile("up", "device.up", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "up", label: "Up", action: "moveUp", icon: "st.thermostat.thermostat-up", backgroundColor: "#FFFFFF", nextState: "upish"
+            state "upish", label: "Up", action: "", icon: "st.thermostat.thermostat-up", backgroundColor: "#00FF00", nextState: "up"
+        }
+        standardTile("zoomIn", "device.zoomIn", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false) {
+            state "zoomIn", label: "", action: "zoomIn", icon: "st.secondary.more", backgroundColor: "#FFFFFF", nextState: "zoomingIn"
+            state "zoomingIn", label: "", action: "", icon: "st.secondary.more", backgroundColor: "#00FF00", nextState: "zoomIn"
+        }
+
+        // Row 2
+        carouselTile("camDetails", "device.image", width: 3, height: 2) {
+        }
+        standardTile("left", "device.left", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "left", label: "Left", action: "moveLeft", icon: "st.thermostat.thermostat-left", backgroundColor: "#FFFFFF", nextState: "leftish"
+            state "leftish", label: "Left", action: "", icon: "st.thermostat.thermostat-left", backgroundColor: "#00FF00", nextState: "left"
+        }
+        standardTile("refresh", "device.refresh", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false) {
+            state "refresh", label: "", action: "refresh.refresh", icon: "st.secondary.refresh", backgroundColor: "#FFFFFF"
+        }
+        standardTile("right", "device.right", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "right", label: "Right", action: "moveRight", icon: "st.thermostat.thermostat-right", backgroundColor: "#FFFFFF", nextState: "rightish"
+            state "rightish", label: "Right", action: "", icon: "st.thermostat.thermostat-right", backgroundColor: "#00FF00", nextState: "right"
+        }
+
+        // Row 3
+        standardTile("recState", "device.recStatus", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false) {
+            state "off", label: "Off", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "on", label: "On", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "auto", label: "Auto", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
+            state "...", label: "...", action: "", backgroundColor: "#00FF00", nextState: "..."
+        }
+        standardTile("down", "device.down", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "down", label: "Down", action: "moveDown", icon: "st.thermostat.thermostat-down", backgroundColor: "#FFFFFF", nextState: "downish"
+            state "downish", label: "Down", action: "", icon: "st.thermostat.thermostat-down", backgroundColor: "#00FF00", nextState: "down"
+        }
+        standardTile("reboot", "device.reboot", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false) {
+            state "reboot", label: "Reboot", action: "rebootNow", icon: "st.Appliances.appliances17", backgroundColor: "#FFFFFF", nextState: "rebooting"
+            state "rebooting", label: "...", action: "", icon: "st.Appliances.appliances17", backgroundColor: "#00FF00", nextState: "reboot"
+        }
+
+        // Row 4
+        standardTile("labelSpeed", "device.level", width: 3, height: 1, inactiveLabel: false) {
+            state "speedLabel", label: "PTZ Speed", action: ""
         }
         standardTile("preset1", "device.presetStatus", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "preset1", label: "", action: "presetCmd1", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset1-ON.png", backgroundColor: "#FFFFFF", nextState: "preset1On"
@@ -115,6 +200,11 @@ metadata {
             state "preset3", label: "", action: "presetCmd3", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset3-ON.png", backgroundColor: "#FFFFFF", nextState: "preset3On"
             state "preset3On", label: "", action: "", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset3-OFF.png", backgroundColor: "#FFFFFF", nextState: "preset3"
         }
+
+        // Row 5
+        controlTile("levelSliderControlSpeed", "device.levelSpeed", "slider", width: 3, height: 1, inactiveLabel: false, range:"(1..8)") {
+            state "speed", action: "setLevelSpeed"
+        }
         standardTile("preset4", "device.presetStatus", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
             state "preset4", label: "", action: "presetCmd4", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset4-ON.png", backgroundColor: "#FFFFFF", nextState: "preset4On"
             state "preset4On", label: "", action: "", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset4-OFF.png", backgroundColor: "#FFFFFF", nextState: "preset4"
@@ -127,88 +217,62 @@ metadata {
             state "preset6", label: "", action: "presetCmd6", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset6-ON.png", backgroundColor: "#FFFFFF", nextState: "preset6On"
             state "preset6On", label: "", action: "", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Preset6-OFF.png", backgroundColor: "#FFFFFF", nextState: "preset6"
         }
-        standardTile("zoomOut", "device.zoomOut", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
-            state "zoomOut", label: "", action: "zoomOut", icon: "st.secondary.less", backgroundColor: "#FFFFFF", nextState: "zoomingOut"
-            state "zoomingOut", label: "", action: "", icon: "st.secondary.less", backgroundColor: "#00FF00", nextState: "zoomOut"
+
+        // Row 6
+        controlTile("levelSliderControlSensitivity", "device.levelSensitivity", "slider", width: 3, height: 1, inactiveLabel: false, range:"(1..6)") {
+            state "sensitivity", action: "setLevelSensitivity"
         }
-        standardTile("up", "device.up", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "up", label: "Up", action: "moveUp", icon: "st.thermostat.thermostat-up", backgroundColor: "#FFFFFF", nextState: "upish"
-            state "upish", label: "Up", action: "", icon: "st.thermostat.thermostat-up", backgroundColor: "#00FF00", nextState: "up"
-        }
-        standardTile("zoomIn", "device.zoomIn", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
-            state "zoomIn", label: "", action: "zoomIn", icon: "st.secondary.more", backgroundColor: "#FFFFFF", nextState: "zoomingIn"
-            state "zoomingIn", label: "", action: "", icon: "st.secondary.more", backgroundColor: "#00FF00", nextState: "zoomIn"
-        }
-        standardTile("left", "device.left", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "left", label: "Left", action: "moveLeft", icon: "st.thermostat.thermostat-left", backgroundColor: "#FFFFFF", nextState: "leftish"
-            state "leftish", label: "Left", action: "", icon: "st.thermostat.thermostat-left", backgroundColor: "#00FF00", nextState: "left"
-        }
-        standardTile("refresh", "device.refresh", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
-            state "refresh", label: "", action: "refresh.refresh", icon: "st.secondary.refresh", backgroundColor: "#FFFFFF"
-        }
-        standardTile("right", "device.right", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "right", label: "Right", action: "moveRight", icon: "st.thermostat.thermostat-right", backgroundColor: "#FFFFFF", nextState: "rightish"
-            state "rightish", label: "Right", action: "", icon: "st.thermostat.thermostat-right", backgroundColor: "#00FF00", nextState: "right"
-        }
-        standardTile("recState", "device.recStatus", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
-            state "off", label: "Off", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
-            state "on", label: "On", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
-            state "auto", label: "Auto", action: "changeRecord", icon: "st.Electronics.electronics7", backgroundColor: "#FFFFFF", nextState: "..."
-            state "...", label: "...", action: "", backgroundColor: "#00FF00", nextState: "..."
-        }
-        standardTile("down", "device.down", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
-            state "down", label: "Down", action: "moveDown", icon: "st.thermostat.thermostat-down", backgroundColor: "#FFFFFF", nextState: "downish"
-            state "downish", label: "Down", action: "", icon: "st.thermostat.thermostat-down", backgroundColor: "#00FF00", nextState: "down"
-        }
-        standardTile("reboot", "device.reboot", width: 2, height: 2, canChangeIcon: false, canChangeBackground: false) {
-            state "reboot", label: "Reboot", action: "rebootNow", icon: "st.Appliances.appliances17", backgroundColor: "#FFFFFF", nextState: "rebooting"
-            state "rebooting", label: "...", action: "", icon: "st.Appliances.appliances17", backgroundColor: "#00FF00", nextState: "reboot"
-        }
-        standardTile("flipStatus", "device.flipStatus", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
+        standardTile("flipStatus", "device.flipStatus", width: 1, height: 1, canChangeIcon: false, decoration: "flat") {
             state "off", label: "Flip", action: "toggleFlip", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/3D-Slider-OFF-Top.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "on", label: "Flip", action: "toggleFlip", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/3D-Slider-ON-Top.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "...", label: "...", action: "", nextState: "..."
         }
-        standardTile("mirrorStatus", "device.mirrorStatus", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
+        standardTile("mirrorStatus", "device.mirrorStatus", width: 1, height: 1, canChangeIcon: false, decoration: "flat") {
             state "off", label: "Mirror", action: "toggleMirror", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/3D-Slider-OFF-Top.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "on", label: "Mirror", action: "toggleMirror", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/3D-Slider-ON-Top.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "...", label: "...", action: "", nextState: "..."
         }
-        standardTile("rotateStatus", "device.rotateStatus", width: 2, height: 2, canChangeIcon: false, decoration: "flat") {
+        standardTile("rotateStatus", "device.rotateStatus", width: 1, height: 1, canChangeIcon: false, decoration: "flat") {
             state "off", label: "Rotation", action: "changeRotation", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/3D-Slider-OFF-Top.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "cw", label: "90°", action: "changeRotation", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Rotate-CW.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "ccw", label: "90°", action: "changeRotation", icon: "http://smartthings.belgarion.s3.amazonaws.com/images/Rotate-CCW.png", backgroundColor: "#FFFFFF", nextState: "..."
             state "...", label: "...", action: "", nextState: "..."
         }
-        controlTile("levelSliderControlSpeed", "device.levelSpeed", "slider", height: 1, width: 3, inactiveLabel: false, range:"(1..8)") {
-            state "speed", action: "setLevelSpeed"
-        }
-        standardTile("labelSpeed", "device.level", height: 1, width: 3, inactiveLabel: false) {
-            state "speedLabel", label: "PTZ Speed", action: ""
-        }
-        controlTile("levelSliderControlSensitivity", "device.levelSensitivity", "slider", height: 1, width: 3, inactiveLabel: false, range:"(1..6)") {
-            state "sensitivity", action: "setLevelSensitivity"
-        }
-        standardTile("labelSensitivity", "device.level", height: 1, width: 3, inactiveLabel: false) {
+
+        // Row 7
+        standardTile("labelSensitivity", "device.level",  width: 3, height: 1,inactiveLabel: false) {
             state "sensitivityLabel", label: "Motion Sensitivity", action: ""
         }
+        standardTile("blank", "device.image", width: 3, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
+            state "blank", label: "", action: "", icon: "", backgroundColor: "#FFFFFF"
+        }
 
-        main "take"
-        details(["take", "ledState", "motionStatus", "camDetails", "preset1", "preset2", "preset3", "preset4", "preset5", "preset6", "zoomOut", "up", "zoomIn", "left", "refresh", "right", "recState", "down", "reboot", "flipStatus", "mirrorStatus", "rotateStatus", "labelSpeed", "labelSensitivity", "levelSliderControlSpeed", "levelSliderControlSensitivity"])
+        main "videoPlayer"
+        details(["videoPlayer", "take", "ledState", "motionStatus", "zoomOut", "up", "zoomIn",
+                 "camDetails", "left", "refresh", "right",
+                 "recState", "down", "reboot",
+                 "labelSpeed", "preset1", "preset2", "preset3",
+                 "levelSliderControlSpeed", "preset4", "preset5", "preset6",
+                 "labelSensitivity", "flipStatus", "mirrorStatus", "rotateStatus",
+                 "levelSliderControlSensitivity", "blank"])
     }
+}
+
+mappings {
+   path("/getInHomeURL") {
+       action:
+       [GET: "getInHomeURL"]
+   }
+   path("/getOutHomeURL") {
+       action:
+       [GET: "getOutHomeURL"]
+   }
 }
 
 //*******************************  Commands  ***************************************
 
 def appVersion() {
-        return "1.1.0"
-}
-
-def take() {
-    log.info "Taking Photo"
-    // Set our image taking mode
-    sendEvent(name: "hubactionMode", value: "s3", displayed: false)
-    hubGetImage("/cgi-bin/snapshot.cgi")
+        return "2.0.0"
 }
 
 def changeNvLED() {
@@ -264,6 +328,25 @@ def changeRotation() {
     doToggleRotation(true)
 }
 
+def configure() {
+    doDebug "configure -> Executing"
+    sendEvent(name: "switch", value: "on")
+}
+
+def getInHomeURL() {
+         //[InHomeURL: parent.state.CameraStreamPath]
+         [InHomeURL: state.CameraInStreamPath]
+}
+
+def getOutHomeURL() {
+         //[OutHomeURL: parent.state.CameraStreamPath]
+         [OutHomeURL: state.CameraOutStreamPath]
+}
+
+def installed() {
+    configure()
+}
+
 def moveDown() {
     log.info "Panning Down"
     sendEvent(name: "down", value: "down", isStateChange: true, displayed: false)
@@ -286,6 +369,16 @@ def moveUp() {
     log.info "Panning Up"
     sendEvent(name: "up", value: "up", isStateChange: true, displayed: false)
     delayBetween([doMoveCmd("start", "Up", "0", "${device.currentValue('levelSpeed') ?: 1}", "0", "0"), doMoveCmd("stop", "Up", "0", "${device.currentValue('levelSpeed') ?: 1}", "0", "0")], msDelay())
+}
+
+def off() {
+    log.info "off -> Switch turned OFF"
+    // Nothing to do
+}
+
+def on() {
+    log.info "on -> Switch turned ON"
+    // Nothing to do
 }
 
 def poll() {  // Polling capability: this command will be called approximately every 5 minutes to check the device's state
@@ -360,6 +453,13 @@ def setLevelSensitivity(int value) {
     doToggleMotionSensitivity(true)
 }
 
+def take() {
+    log.info "Taking Photo"
+    // Set our image taking mode
+    sendEvent(name: "hubactionMode", value: "s3", displayed: false)
+    hubGetImage("/cgi-bin/snapshot.cgi")
+}
+
 def toggleFlip() {
     doToggleFlip(true)
 }
@@ -374,6 +474,65 @@ def toggleMotion() {
 
 def updated() {
     doDebug("'updated()' called...")
+    configure()
+}
+
+def videoSetProfile(profile) {
+    log.info "videoSetProfile -> ${profile}"
+    sendEvent(name: "profile", value: profile, displayed: false)
+}
+
+def videoSetResHD() {
+    log.info "videoSetResHD -> Set video to HD stream"
+    sendEvent(name: "profile", value: "hd", displayed: false)
+}
+
+def videoSetResSD() {
+    log.info "videoSetResSD -> Set video to SD stream"
+    sendEvent(name: "profile", value: "sd", displayed: false)
+}
+
+def videoStart() {
+    log.info "videoStart -> Turning Video Streaming ON"
+
+    def userPassAscii = "${camUser}:${camPassword}"
+    def apiCommand = "/cgi-bin/mjpg/video.cgi?channel=0&subtype=0"
+    def uri = "http://" + userPassAscii + "@${camIP}:${camPort}" + apiCommand
+
+    //parent.state.CameraStreamPath
+    state.CameraInStreamPath = uri
+    state.CameraOutStreamPath = ""
+    if (isIpAddress(camIP) != true) {
+        state.CameraOutStreamPath = uri
+    }
+    else if (!ipIsLocal(camIP) != true) {
+        state.CameraOutStreamPath = uri
+    }
+
+    // Only Public IP's work for 'OutHomeURL'
+    def dataLiveVideo = [
+            //OutHomeURL  : parent.state.CameraStreamPath,
+            //InHomeURL   : parent.state.CameraStreamPath,
+            OutHomeURL  : state.CameraOutStreamPath,
+            InHomeURL   : state.CameraInStreamPath,
+            ThumbnailURL: "http://cdn.device-icons.smartthings.com/camera/dlink-indoor@2x.png",
+            cookie      : [key: "key", value: "value"]
+    ]
+
+    def event = [
+            name           : "stream",
+            value          : groovy.json.JsonOutput.toJson(dataLiveVideo).toString(),
+            data           : groovy.json.JsonOutput.toJson(dataLiveVideo),
+            descriptionText: "Starting the livestream",
+            eventType      : "VIDEO",
+            displayed      : false,
+            isStateChange  : true
+    ]
+    sendEvent(event)
+}
+
+def videoStop() {
+    log.info "videoStop -> Turning Video Streaming OFF"
 }
 
 def zoomIn() {
