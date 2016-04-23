@@ -19,7 +19,7 @@
  *     THIS code only and any reference to these resources beyond this use is expressly prohibited.
  *
  *  Citations:
- *   - pstuart: For the efforts he put into his Generic Camera device and various posts.  Very educational!
+ *   - pstuart: For the efforts he put into his Generic Camera device, various posts and "Live Code Fridays"!
  *   - tgauchat and RBoy: For the "convertHostnameToIPAddress" macro.
  *   - slagle, eparkerjr and scottinpollock: For their efforts on the great Foscam & D-Link device types.
  *   - RBoy: For the code making the JPEG image available to other apps.
@@ -27,6 +27,7 @@
  *  Release History:
  *    2016-04-12: v1.0.0 = Initial release
  *    2016-04-21: v1.1.0 = Added the 'Actuator' capability (use with caution!) and a version command
+ *    2016-04-23: v2.0.0 = Added video streaming and a complete UI redesign
  *
  **/
 
