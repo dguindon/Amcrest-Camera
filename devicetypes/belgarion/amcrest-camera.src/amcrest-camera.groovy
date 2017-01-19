@@ -26,7 +26,10 @@
  *   - JBethancourt: Works with multiple camera HDCVI systems like the 4-camera AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras.
  *
  *  Release History:
- *    2017-01-19: v2.3.1 = Fixed a typo and a missing line in convertHostnameToIPAddress (thx jjslegacy!)
+ *    2017-01-19: v2.3.2 = Fixed a typo in the return value for 'convertHostnameToIPAddress'.  Also, ST revoked S3 access so snapshots are
+ *                         no longer functional.  Also, I separated the camera channel from the video channel, so your configurations must
+ *                         be refiled!
+ *    2017-01-19: v2.3.1 = Fixed a typo and a missing line in convertHostnameToIPAddress (thx jjslegacy!).
  *    2017-01-18: v2.3.0 = Fixed the HostName resolution, allow user-defined RTSP port and allow for multi-camera HDCVI systems (e.g. 4-camera
  *                         AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras, thx to JBethancourt), updated debugging
  *                         for readability (thx to ady624 for the formatting code), changed the default state of recording to "Auto" instead of "Off"
@@ -95,7 +98,10 @@ metadata {
         input("camRTSPPort", "string", title:"RTSP Port", description: "", required: true, displayDuringSetup: true)
         input("camUser", "string", title: "Account Username", description: "Enter the Account Username", required: true, displayDuringSetup: true)
         input("camPassword", "password", title: "Account Password", description: "Enter the Password for this Account Username", required: true, displayDuringSetup: true)
-        input("camChannel", "range: 0..9", title: "Video Channel", description: "Specify the image channel to use (typically 0)", required: true, displayDuringSetup: true)
+        input(title: "", description:"For 'Camera Channel', specify the camera (for snapshots, presets, etc.) channel to use (typically 0)", displayDuringSetup: false, type: "paragraph", element: "paragraph")
+        input("camChannel", "range: 0..9", title: "Camera Channel", description: "", required: true, displayDuringSetup: true)
+        input(title: "", description:"For 'Video Channel', specify the video streaming channel to use", displayDuringSetup: false, type: "paragraph", element: "paragraph")
+        input("camVideoChannel", "range: 0..9", title: "Video Channel", description: "", required: true, displayDuringSetup: true)
         input(title: "", description:"If snapshots and RTSP video are from different channels, turn this on.", displayDuringSetup: false, type: "paragraph", element: "paragraph")
         input("channelFix", "bool", title:"Channel Problem Fix", description: "", required: false, displayDuringSetup: true)
         input(title: "", description:"Enable to display debugging information in the 'Live Logging' view.", displayDuringSetup: false, type: "paragraph", element: "paragraph")
@@ -348,6 +354,15 @@ def changeRotation() {
 
 def configure() {
     doDebug("configure -> Executing", "info", 0)
+    state.camIP = camIP
+    state.camPort = camPort
+    state.camRTSPPort = camRTSPPort
+    state.camUser = camUser
+    state.camPassword = camPassword
+    state.camChannel = camChannel
+    state.camVideoChannel = camVideoChannel
+    state.channelFix = channelFix
+    state.camDebug = camDebug
     sendEvent(name: "video", value: "on")
     if (!device.currentValue('streamType')) {
         toggleStreamType()
@@ -550,12 +565,12 @@ def videoStart() {
     def camChannelModString = ""
 
     if (device.currentValue('streamType') == "MJPEG") {
-        apiCommand = "/cgi-bin/mjpg/video.cgi?channel=${state.camChannel}&subtype=0"
+        apiCommand = "/cgi-bin/mjpg/video.cgi?channel=${state.camVideoChannel}&subtype=0"
         usePort = camPort
         useProtocol = "http://"
     }
     else {  // Allow the user to define the RTSP port (default to 554) and increment the channel by 1 if 'channelFix' is turned on.
-        camChannelModString = camChannel
+        camChannelModString = camVideoChannel
 
         if (channelFix){
             camChannelMod = camChannelModString.toInteger()
@@ -573,6 +588,7 @@ def videoStart() {
         useProtocol = "rtsp://"
     }
     def uri = useProtocol + userPassAscii + "@${camIP}:${usePort}" + apiCommand
+    doDebug("videoStart -> camVideoChannel = ${camVideoChannel}, state.camVideoChannel = ${state.camVideoChannel}, camChannelModString = ${camChannelModString}", "info", 1)
     doDebug("videoStart -> Streaming ${device.currentValue('streamType')} video; apiCommand = ${apiCommand}, IP = ${camIP}, Port = ${usePort}", "info", 1)
 
     // Store the paths in state for callbacks
@@ -1245,7 +1261,7 @@ private String convertHostnameToIPAddress(hostname) { // thanks go to cosmicpupp
                         for(result in response.data?.Answer) {
                             if (isIpAddress(result?.data)) {
                                 doDebug("=> Resolved: ${result?.name} has IP Address ${result?.data}", "info", 1)
-                                return answer?.data
+                                return result?.data
                             }
                             else {
                                 doDebug("=> Redirected: ${result?.name} redirects to ${result?.data}", "info", 1)
