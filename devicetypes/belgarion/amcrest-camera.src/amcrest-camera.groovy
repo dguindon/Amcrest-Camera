@@ -26,6 +26,7 @@
  *   - JBethancourt: Works with multiple camera HDCVI systems like the 4-camera AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras.
  *
  *  Release History:
+ *    2017-01-19: v2.3.1 = Fixed a typo and a missing line in convertHostnameToIPAddress (thx jjslegacy!)
  *    2017-01-18: v2.3.0 = Fixed the HostName resolution, allow user-defined RTSP port and allow for multi-camera HDCVI systems (e.g. 4-camera
  *                         AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras, thx to JBethancourt), updated debugging
  *                         for readability (thx to ady624 for the formatting code), changed the default state of recording to "Auto" instead of "Off"
@@ -289,7 +290,7 @@ mappings {
 //*******************************  Commands  ***************************************
 
 def appVersion() {
-        return "2.3.0"
+        return "2.3.1"
 }
 
 def changeNvLED() {
@@ -1233,7 +1234,8 @@ private String OLDconvertHostnameToIPAddress(hostname) { // thanks go to cosmicp
 private String convertHostnameToIPAddress(hostname) { // thanks go to cosmicpuppy and RBoy!
     doDebug("convertHostnameToIPAddress -> BEGIN", "info", 1)
     def params = [
-                  uri: "http://dns.google.com/resolve?name=" + hostname
+                  uri: "http://dns.google.com/resolve?name=" + hostname,
+                  contentType: 'application/json'
                  ]
     def retVal = null
     try {
@@ -1241,7 +1243,7 @@ private String convertHostnameToIPAddress(hostname) { // thanks go to cosmicpupp
                     doDebug("convertHostnameToIPAddress -> Request was successful, data = $response.data, status=$response.status", "info")
                     if (response.data?.Status == 0) { // Resolved
                         for(result in response.data?.Answer) {
-                            if (isIPAddress(result?.data)) {
+                            if (isIpAddress(result?.data)) {
                                 doDebug("=> Resolved: ${result?.name} has IP Address ${result?.data}", "info", 1)
                                 return answer?.data
                             }
