@@ -26,7 +26,7 @@
  *   - JBethancourt: Works with multiple camera HDCVI systems like the 4-camera AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras.
  *
  *  Release History:
- *    2017-01-27: v2.3.3 = Increased the range of channels to 0..15 to accommodate 16 camera NVR systems and fixed snapshots.
+ *    2017-??-??: v2.3.3 = Increased the range of channels to 0..15 to accommodate 16 camera NVR systems.
  *    2017-01-19: v2.3.2 = Fixed a typo in the return value for 'convertHostnameToIPAddress'.  Also, ST revoked S3 access so snapshots are
  *                         no longer functional.  Also, I separated the camera channel from the video channel, so your configurations must
  *                         be refiled!
@@ -178,10 +178,6 @@ metadata {
         }
 
         // Row 2
-        /*
-        standardTile("image", "device.image", width: 3, height: 2) {
-        }
-        */
         carouselTile("camDetails", "device.image", width: 3, height: 2) {
         }
         standardTile("left", "device.left", width: 1, height: 1, canChangeIcon: false, canChangeBackground: false, decoration: "flat") {
@@ -277,7 +273,6 @@ metadata {
         }
 
         main "videoPlayer"
-        //main "image"
         details(["videoPlayer", "take", "ledState", "motionStatus", "zoomOut", "up", "zoomIn",
                  "camDetails", "left", "refresh", "right",
                  "recState", "down", "reboot",
@@ -943,16 +938,15 @@ def parse(String description) {  // 'HubAction' Method: Parse events into attrib
         String headers = new String(descMap["headers"].decodeBase64())
         doDebug("parse -> headers = ${headers}", "info")
     }
+
     // Image Response
-    if (descMap["key"]) {
-        doDebug("parse -> Detected: Temp image response", "info")
-        try {
-            retResult = storeTemporaryImage(descMap["key"], getPictureName())
-            }
-        catch(Exception e) {
-            doDebug("parse -> Exception thrown: $e", "error")
-            log.error e
-        }
+    if (descMap["bucket"] && descMap["key"]) {
+        doDebug("parse -> Detected: S3 image response", "info")
+        retResult = putImageInS3(descMap)
+    }
+    else if (descMap["headers"].contains("image/jpeg")) {
+        doDebug("parse -> Detected: S3 image response", "info")
+        retResult = putImageInS3(descMap)
     }
     // Non-Image Response
     else if (descMap["headers"] && descMap["body"]) {
@@ -1013,6 +1007,44 @@ def parseHttpGetResponse(response) {  // 'httpGet' Method: Parse events into att
 }
 
 //*******************************  Image Handling  *********************************
+
+def putImageInS3(map) {
+    doDebug("putImageInS3 -> BEGIN", "info", 1)
+    try {
+        def imageBytes = getS3Object(map.bucket, map.key + ".jpg")
+        doDebug("putImageInS3 -> S3Object = $imageBytes", "info")
+
+        if (imageBytes) {
+            def s3ObjectContent = imageBytes.getObjectContent()
+            def image = new ByteArrayInputStream(s3ObjectContent.bytes)
+            if (image) {
+                def bytes = image.buf
+
+                // Broadcast our image file data (thanks to RBoy for the imageDataJpeg saving)
+                String str = bytes.encodeBase64()
+                sendEvent(name: "imageDataJpeg", value: str, isStateChange: true, displayed: false)
+
+                def picName = getPictureName()
+                doDebug("putImageInS3 -> Saving image '$picName' to the SmartThings cloud", "info")
+                storeImage(picName, image)  // Removes the data from the 'image' object
+            }
+            else {
+                doDebug("putImageInS3 -> Received an empty response from camera, expecting a JPEG image", "warn")
+            }
+        }
+        else {
+            doDebug("putImageInS3 -> Received an empty response from camera, expecting a JPEG image", "warn")
+        }
+    }
+    catch(Exception e) {
+        doDebug("putImageInS3 -> Exeception thrown: $e", "error")
+    }
+    finally {
+        //Explicitly close the stream
+        if (s3ObjectContent) { s3ObjectContent.close() }
+    }
+    doDebug("putImageInS3 -> END", "info", -1)
+}
 
 private getPictureName() {
     def pictureUuid = java.util.UUID.randomUUID().toString().replaceAll('-', '').toUpperCase()
