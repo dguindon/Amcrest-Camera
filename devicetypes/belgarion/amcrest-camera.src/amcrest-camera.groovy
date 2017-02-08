@@ -26,6 +26,7 @@
  *   - JBethancourt: Works with multiple camera HDCVI systems like the 4-camera AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras.
  *
  *  Release History:
+ *    2017-02-08: v2.3.4 = Fixed q bug that prevented video streaming from working when using a public IP.
  *    2017-01-27: v2.3.3 = Increased the range of channels to 0..15 to accommodate 16 camera NVR systems and fixed snapshots.
  *    2017-01-19: v2.3.2 = Fixed a typo in the return value for 'convertHostnameToIPAddress'.  Also, ST revoked S3 access so snapshots are
  *                         no longer functional.  Also, I separated the camera channel from the video channel, so your configurations must
@@ -603,7 +604,7 @@ def videoStart() {
     if (isIpAddress(camIP) != true) {
         state.CameraOutStreamPath = uri
     }
-    else if (!ipIsLocal(camIP) != true) {
+    else if (ipIsLocal(camIP) != true) {
         state.CameraOutStreamPath = uri
     }
 
