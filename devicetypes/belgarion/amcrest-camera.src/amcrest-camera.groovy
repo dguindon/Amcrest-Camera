@@ -26,7 +26,8 @@
  *   - JBethancourt: Works with multiple camera HDCVI systems like the 4-camera AMDV7204-4B: just pick channels 0 through 3 and set up as individual cameras.
  *
  *  Release History:
- *    2017-02-08: v2.3.4 = Fixed q bug that prevented video streaming from working when using a public IP.
+ *    2017-03-11: v2.3.5 = Snapshots now work with the new storeTemporaryImage function.
+ *    2017-02-08: v2.3.4 = Fixed a bug that prevented video streaming from working when using a public IP.
  *    2017-01-27: v2.3.3 = Increased the range of channels to 0..15 to accommodate 16 camera NVR systems and fixed snapshots.
  *    2017-01-19: v2.3.2 = Fixed a typo in the return value for 'convertHostnameToIPAddress'.  Also, ST revoked S3 access so snapshots are
  *                         no longer functional.  Also, I separated the camera channel from the video channel, so your configurations must
@@ -945,10 +946,10 @@ def parse(String description) {  // 'HubAction' Method: Parse events into attrib
         doDebug("parse -> headers = ${headers}", "info")
     }
     // Image Response
-    if (descMap["key"]) {
-        doDebug("parse -> Detected: Temp image response", "info")
+    if (descMap["tempImageKey"]) {
+        doDebug("parse -> Detected: Temp image response; Sending picture to SmartThings...", "info")
         try {
-            retResult = storeTemporaryImage(descMap["key"], getPictureName())
+            retResult = storeTemporaryImage(descMap["tempImageKey"], getPictureName())
             }
         catch(Exception e) {
             doDebug("parse -> Exception thrown: $e", "error")
